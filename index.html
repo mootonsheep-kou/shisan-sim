@@ -58,8 +58,8 @@ section[hidden]{display:none}
 .num .unit{width:30px;font-size:13px;color:var(--ink2)}
 select{height:40px;border:1px solid var(--axis);border-radius:8px;background:var(--field);color:var(--ink);font:inherit;font-size:14px;padding:0 8px;max-width:190px}
 .switch{position:relative;width:52px;height:30px;flex:none}
-.switch input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0}
-.switch span{position:absolute;inset:0;border-radius:999px;background:var(--axis);transition:.15s}
+.switch input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;z-index:1;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--axis);transition:.15s;pointer-events:none}
 .switch span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.15s}
 .switch input:checked+span{background:var(--accent)}
 .switch input:checked+span::after{left:25px}
@@ -67,8 +67,9 @@ select{height:40px;border:1px solid var(--axis);border-radius:8px;background:var
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
 .tile{background:var(--surface);border:2px solid var(--border);border-radius:18px;padding:12px;min-width:0;box-shadow:0 4px 0 var(--border)}
 .tile.wide{grid-column:1/-1;background:#fffbe9}
+.tile.wide .v{font-size:24px}
 .tile .k{font-size:12px;color:var(--ink2);font-weight:700}
-.tile .v{font-size:24px;font-weight:900;line-height:1.25;overflow-wrap:anywhere}
+.tile .v{font-size:19px;font-weight:900;line-height:1.25;overflow-wrap:anywhere}
 .tile .s{font-size:12px;color:var(--muted)}
 .tile.warn .v{color:var(--crit)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink2);margin:0 0 4px}
@@ -272,12 +273,7 @@ function simulate(s){
 /* ---------- 表示のための小道具 ---------- */
 const $=(q,el=document)=>el.querySelector(q), $$=(q,el=document)=>[...el.querySelectorAll(q)];
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
-function yen(v){
-  const a=Math.abs(v);
-  if(a>=1e8) return (v/1e8).toFixed(2)+'億円';
-  if(a>=1e6) return Math.round(v/1e4).toLocaleString('ja-JP')+'万円';
-  return (v/1e4).toFixed(1)+'万円';
-}
+function yen(v){ return (Math.round(v)||0).toLocaleString("ja-JP")+"円"; }
 function axisLabel(v){
   if(v===0) return '0';
   if(v>=1e8) return (+(v/1e8).toFixed(2))+'億';

@@ -1,5 +1,5 @@
 // オフラインでも開けるようにする仕組み（通信できるときは新しい版を優先）
-const CACHE = 'shisan-sim-v4';
+const CACHE = 'shisan-sim-v5';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'sheep.png', 'pose-save.png', 'pose-div.png', 'pose-happy.png', 'pose-sad.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
