@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>資産シミュレーション</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#fff3d2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --plane:#fff3d2; --surface:#fffdf8; --ink:#3a2c1a; --ink2:#6b5a44; --muted:#8a7a63;
+  --grid:#f1e7d0; --axis:#dccfb0; --border:#f0dba6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --accent:#2a78d6; --accent-ink:#fff; --crit:#d03b3b; --good:#006300; --field:#fff;
+  --sun:#ffd24a; --sun-soft:#ffecb0;
+  --font:"Zen Maru Gothic","Hiragino Maru Gothic ProN",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--plane);color:var(--ink);font:500 16px/1.5 var(--font);
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:var(--plane);border-bottom:2px solid var(--border);
+  padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+header h1{font-size:17px;margin:0;font-weight:900;display:flex;align-items:center;gap:8px}
+header h1 img{height:34px;width:auto}
+.chip{border:2px solid var(--ink);background:var(--sun);color:var(--ink);border-radius:999px;
+  padding:4px 12px;font:inherit;font-size:14px;font-weight:700}
+main{max-width:560px;margin:0 auto;padding:12px 16px}
+section[hidden]{display:none}
+.card{background:var(--surface);border:2px solid var(--border);border-radius:20px;padding:14px;margin:0 0 14px;box-shadow:0 4px 0 var(--border)}
+.say{display:flex;align-items:flex-end;gap:12px;margin:2px 0 14px}
+.say img{width:118px;height:118px;object-fit:contain;object-position:center bottom;flex:none}
+.say p{position:relative;flex:1;margin:0 0 16px;background:#fff;border:2px solid var(--ink);border-radius:18px;
+  padding:10px 14px;font-size:15px;font-weight:700;line-height:1.55}
+.say p::before,.say p::after{content:"";position:absolute;bottom:14px;border-style:solid;border-color:transparent}
+.say p::before{left:-12px;border-width:7px 12px 7px 0;border-right-color:var(--ink)}
+.say p::after{left:-8px;border-width:5px 9px 5px 0;border-right-color:#fff;bottom:16px}
+.say p b{font-weight:900;background:linear-gradient(transparent 62%,var(--sun) 62%)}
+.say.warn p b{background:linear-gradient(transparent 62%,#ffc9c2 62%)}
+.card h2{font-size:15px;margin:0 0 10px;font-weight:700}
+.card h3{font-size:14px;margin:0 0 8px;font-weight:700}
+.field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--grid)}
+.field:first-of-type{border-top:0}
+.field label{flex:1;font-size:14px;color:var(--ink2);min-width:0}
+.field small{display:block;color:var(--muted);font-size:12px;line-height:1.35}
+.num{display:flex;align-items:center;gap:4px;flex:none}
+.num input{width:76px;height:40px;border:1px solid var(--axis);border-radius:8px;background:var(--field);color:var(--ink);
+  font:inherit;text-align:right;padding:0 8px;-moz-appearance:textfield}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none}
+.num button{width:36px;height:40px;border:0;border-radius:12px;background:var(--sun-soft);color:var(--ink);font-size:18px;font-weight:700;line-height:1}
+.num button:active{background:var(--sun)}
+.num input,select{font-weight:700}
+.num .unit{width:30px;font-size:13px;color:var(--ink2)}
+select{height:40px;border:1px solid var(--axis);border-radius:8px;background:var(--field);color:var(--ink);font:inherit;font-size:14px;padding:0 8px;max-width:190px}
+.switch{position:relative;width:52px;height:30px;flex:none}
+.switch input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--axis);transition:.15s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.15s}
+.switch input:checked+span{background:var(--accent)}
+.switch input:checked+span::after{left:25px}
+.switch input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.tile{background:var(--surface);border:2px solid var(--border);border-radius:18px;padding:12px;min-width:0;box-shadow:0 4px 0 var(--border)}
+.tile.wide{grid-column:1/-1;background:#fffbe9}
+.tile .k{font-size:12px;color:var(--ink2);font-weight:700}
+.tile .v{font-size:24px;font-weight:900;line-height:1.25;overflow-wrap:anywhere}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile.warn .v{color:var(--crit)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink2);margin:0 0 4px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.legend i.ln{height:0;border-top:2px dashed var(--ink2);border-radius:0;vertical-align:3px;width:14px}
+svg.chart{display:block;width:100%;height:220px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+svg text{font:500 11px var(--font);fill:var(--muted);font-variant-numeric:tabular-nums}
+.agepick{display:flex;align-items:center;gap:10px;margin:8px 0 2px}
+.agepick b{font-size:15px;flex:none;min-width:52px}
+.agepick input{flex:1;accent-color:var(--accent);height:32px}
+dl{margin:6px 0 0;display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+dt{color:var(--ink2)} dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+dt.sub{padding-left:12px;color:var(--muted)} dt.sub+dd{font-weight:400;color:var(--ink2)}
+details summary{font-size:14px;font-weight:700;padding:4px 0}
+.tw{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{padding:5px 8px;text-align:right;border-top:1px solid var(--grid)}
+th{color:var(--ink2);font-weight:600;border-top:0;position:sticky;top:0;background:var(--surface)}
+th:first-child,td:first-child{text-align:left}
+.note{font-size:12px;color:var(--ink2);line-height:1.6;margin:0;padding-left:18px}
+.btn{width:100%;height:46px;border:2px solid var(--axis);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-weight:700}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:2px solid var(--border);
+  display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;height:64px;border:0;background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+nav button svg{width:56px;height:30px;padding:4px 17px;border-radius:999px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav button[aria-selected="true"]{color:var(--ink);font-weight:900}
+nav button[aria-selected="true"] svg{background:var(--sun)}
+</style>
+</head>
+<body>
+<header>
+  <h1><img src="sheep.png" alt="">資産シミュレーション</h1>
+  <button class="chip" id="ageChip" type="button"></button>
+</header>
+
+<main>
+  <!-- ① 積立 -->
+  <section id="tab-save">
+    <div class="say" id="say-save"><img src="pose-save.png" alt="羊のキャラクター"><p></p></div>
+    <div class="card"><h2>積立の条件</h2><div data-fields="monthly,contribEnd,growth,initN,initT"></div></div>
+    <div class="tiles" id="tiles-save"></div>
+    <div class="card">
+      <h3>資産の伸び（年齢ごと）</h3>
+      <div class="legend"><span><i style="background:var(--s1)"></i>NISA口座</span><span><i style="background:var(--s2)"></i>課税口座</span><span><i class="ln"></i>積み立てた元本</span></div>
+      <svg class="chart" id="ch-save" role="img" aria-label="年齢ごとの資産のグラフ"></svg>
+      <div class="agepick"><b class="selLabel"></b><input type="range" class="selRange" aria-label="見る年齢"></div>
+      <dl id="dl-save"></dl>
+    </div>
+    <div class="card"><details><summary>年齢ごとの表を見る</summary><div class="tw" id="tb-save"></div></details></div>
+  </section>
+
+  <!-- ② 配当 -->
+  <section id="tab-div" hidden>
+    <div class="say" id="say-div"><img src="pose-div.png" alt="羊のキャラクター"><p></p></div>
+    <div class="card"><h2>配当の条件</h2><div data-fields="yield,divGrowth,reinvestUntil"></div></div>
+    <div class="tiles" id="tiles-div"></div>
+    <div class="card">
+      <h3>1年間の配当（税引き後の手取り）</h3>
+      <div class="legend"><span><i style="background:var(--s3)"></i>再投資に回す</span><span><i style="background:var(--s4)"></i>受け取って使う</span></div>
+      <svg class="chart" id="ch-div" role="img" aria-label="年齢ごとの配当のグラフ"></svg>
+      <div class="agepick"><b class="selLabel"></b><input type="range" class="selRange" aria-label="見る年齢"></div>
+      <dl id="dl-div"></dl>
+    </div>
+    <div class="card"><details><summary>年齢ごとの表を見る</summary><div class="tw" id="tb-div"></div></details></div>
+  </section>
+
+  <!-- ③ 取り崩し -->
+  <section id="tab-wd" hidden>
+    <div class="say" id="say-wd"><img src="pose-happy.png" alt="羊のキャラクター"><p></p></div>
+    <div class="card"><h2>取り崩しの条件</h2><div data-fields="wdStart,wdMonthly,wdOrder,inflOn,inflRate"></div></div>
+    <div class="tiles" id="tiles-wd"></div>
+    <div class="card">
+      <h3>資産の残り（年齢ごと）</h3>
+      <div class="legend"><span><i style="background:var(--s1)"></i>NISA口座</span><span><i style="background:var(--s2)"></i>課税口座</span></div>
+      <svg class="chart" id="ch-wd" role="img" aria-label="年齢ごとの資産の残りのグラフ"></svg>
+      <div class="agepick"><b class="selLabel"></b><input type="range" class="selRange" aria-label="見る年齢"></div>
+      <dl id="dl-wd"></dl>
+    </div>
+    <div class="card"><details><summary>年齢ごとの表を見る</summary><div class="tw" id="tb-wd"></div></details></div>
+  </section>
+
+  <!-- 設定 -->
+  <section id="tab-set" hidden>
+    <div class="say"><img src="sheep.png" alt="羊のキャラクター"><p>まずは<b>いまの年齢</b>を教えてね。税金やNISAの条件もここで変えられるよ。</p></div>
+    <div class="card"><h2>あなたの年齢</h2><div data-fields="age,endAge"></div></div>
+    <div class="card"><h2>NISA（非課税の制度）</h2><div data-fields="nisaOn,nisaAnnual,nisaLife"></div></div>
+    <div class="card"><h2>税金</h2><div data-fields="taxRate,foreignOn,foreignRate"></div></div>
+    <div class="card"><h2>この計算の前提</h2>
+      <ul class="note">
+        <li>1か月ごとに計算しています。株価は毎月なめらかに伸び、配当は毎月に分けて入る想定です。</li>
+        <li>積立も配当の再投資も、NISAの枠が残っていればNISAで買い、枠を超えた分は課税口座で買います。</li>
+        <li>NISAの生涯上限は「買ったときの金額」の合計で数えます。NISAを売ると、その分の枠がすぐ戻る計算です（実際は翌年に戻ります）。</li>
+        <li>課税口座の配当と、売ったときの利益には国内の税率がかかります。NISAの中ではかかりません。</li>
+        <li>外国課税は、NISAでも課税口座でも配当から先に引きます。あとで取り戻せる制度（外国税額控除）は計算に入れていません。</li>
+        <li>取り崩しは「毎月使いたい額」に配当の受け取りだけで足りない分を売って補います。</li>
+        <li>手数料や信託報酬（投資信託の管理費）は入れていません。結果は目安です。</li>
+        <li>入力した条件は、この端末の中だけに保存されます。</li>
+      </ul>
+    </div>
+    <button class="btn" id="resetBtn" type="button">入力を最初の状態に戻す</button>
+  </section>
+</main>
+
+<nav role="tablist">
+  <button type="button" data-tab="save" role="tab"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16v-4M11 16V8M16 16v-6M20 16V5"/></svg>積立</button>
+  <button type="button" data-tab="div" role="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 8l3 4 3-4M12 12v5M9 13h6"/></svg>配当</button>
+  <button type="button" data-tab="wd" role="tab"><svg viewBox="0 0 24 24"><path d="M3 6c5 0 6 12 18 12M17 14l4 4-4 4" transform="translate(0,-2)"/></svg>取り崩し</button>
+  <button type="button" data-tab="set" role="tab"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>設定</button>
+</nav>
+
+<script>
+'use strict';
+/* ---------- 入力項目の定義 ---------- */
+const F = {
+  age:{label:'現在の年齢',unit:'歳',step:1,min:0,max:110,def:30},
+  endAge:{label:'何歳まで計算するか',unit:'歳',step:1,min:1,max:120,def:100},
+  nisaOn:{label:'NISAを使う',type:'bool',def:true,hint:'オフにすると、すべて課税口座で計算します'},
+  nisaAnnual:{label:'1年に買える上限',unit:'万円',step:10,min:0,def:360,dep:'nisaOn'},
+  nisaLife:{label:'一生で買える上限',unit:'万円',step:100,min:0,def:1800,dep:'nisaOn'},
+  taxRate:{label:'国内の税率',unit:'％',step:1,min:0,max:100,def:20.315,hint:'配当と、売ったときの利益にかかる税'},
+  foreignOn:{label:'外国課税を引く',type:'bool',def:false,hint:'米国株など、海外で先に引かれる税'},
+  foreignRate:{label:'外国課税の率',unit:'％',step:1,min:0,max:100,def:10,dep:'foreignOn'},
+  monthly:{label:'毎月の積立額',unit:'万円',step:1,min:0,def:5},
+  contribEnd:{label:'積立を続ける年齢',unit:'歳',step:1,min:0,max:120,def:65,hint:'この年齢になるまで積み立てます'},
+  growth:{label:'株価の伸び率（年）',unit:'％',step:0.5,min:-50,max:50,def:3},
+  initN:{label:'いまNISAにある額',unit:'万円',step:10,min:0,def:0,hint:'無ければ 0 のままでOK'},
+  initT:{label:'いま課税口座にある額',unit:'万円',step:10,min:0,def:0},
+  yield:{label:'配当利回り（年）',unit:'％',step:0.5,min:0,max:50,def:3,hint:'株価に対して1年にもらえる配当の割合'},
+  divGrowth:{label:'増配率（年）',unit:'％',step:0.5,min:-50,max:50,def:3,hint:'1株あたりの配当が毎年増える割合。株価の伸び率と同じなら利回りは一定'},
+  reinvestUntil:{label:'配当を再投資する年齢',unit:'歳',step:1,min:0,max:120,def:60,hint:'この年齢になるまで再投資。それ以降は受け取って使います'},
+  wdStart:{label:'取り崩しを始める年齢',unit:'歳',step:1,min:0,max:120,def:65},
+  wdMonthly:{label:'毎月使いたい額（手取り）',unit:'万円',step:1,min:0,def:15,hint:'配当で足りない分だけ売ります。0 なら売りません'},
+  wdOrder:{label:'売る順番',type:'select',def:'T',options:[['T','課税口座から先に売る'],['N','NISAから先に売る']]},
+  inflOn:{label:'物価上昇を考える',type:'bool',def:false,hint:'使いたい額を毎年少しずつ増やします'},
+  inflRate:{label:'物価上昇率（年）',unit:'％',step:0.5,min:-10,max:30,def:2,dep:'inflOn'}
+};
+const KEY='shisan-sim-v1';
+const defaults=()=>Object.fromEntries(Object.entries(F).map(([k,f])=>[k,f.def]));
+let S=defaults();
+try{ const j=JSON.parse(localStorage.getItem(KEY)||'null'); if(j) for(const k in F) if(k in j && typeof j[k]===typeof F[k].def) S[k]=j[k]; }catch(e){}
+const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} };
+
+/* ---------- 計算の本体 ---------- */
+function simulate(s){
+  const age=Math.round(s.age), end=Math.max(age+1,Math.round(s.endAge));
+  const tax=s.taxRate/100, f=s.foreignOn?s.foreignRate/100:0, infl=s.inflOn?s.inflRate/100:0;
+  const gm=Math.pow(1+s.growth/100,1/12), dm=Math.pow(1+s.divGrowth/100,1/12), im=Math.pow(1+infl,1/12);
+  const annual=s.nisaAnnual*1e4, life=s.nisaLife*1e4;
+  let P=1, dps=s.yield/100, target=s.wdMonthly*1e4;
+  let shN=0,shT=0,basN=0,basT=0;
+  if(s.nisaOn){ shN=basN=s.initN*1e4; shT=basT=s.initT*1e4; } else { shT=basT=(s.initN+s.initT)*1e4; }
+  let principal=shN+shT, usedYear=0, row=null;
+  const rows=[]; const out={rows,age,end,fullAge:null,firstTaxAge:null,depletedAge:null};
+  const buy=(amt,a)=>{
+    if(amt<=0) return;
+    let toN=0;
+    if(s.nisaOn){ toN=Math.max(0,Math.min(amt,annual-usedYear,life-basN)); }
+    const toT=amt-toN;
+    if(toN>0){ shN+=toN/P; basN+=toN; usedYear+=toN; row.toN+=toN; if(out.fullAge===null && basN>=life-1) out.fullAge=a; }
+    if(toT>0){ shT+=toT/P; basT+=toT; row.toT+=toT; if(out.firstTaxAge===null) out.firstTaxAge=a; }
+  };
+  const sell=(kind,need)=>{
+    if(need<=0) return 0;
+    if(kind==='T'){
+      const V=shT*P; if(V<1) return 0;
+      const r=Math.max(0,1-basT/V), k=1-r*tax, gross=Math.min(V,need/k), fr=gross/V;
+      shT*=1-fr; basT*=1-fr; row.saleTax+=gross*r*tax; return gross*k;
+    }
+    const V=shN*P; if(V<1) return 0;
+    const gross=Math.min(V,need), fr=gross/V; shN*=1-fr; basN*=1-fr; return gross;
+  };
+  for(let a=age;a<=end;a++){
+    row={age:a,nisa:shN*P,taxable:shT*P,total:(shN+shT)*P,principal,nisaUsed:basN,
+      contrib:0,toN:0,toT:0,divGross:0,fTax:0,dTax:0,divNet:0,reinv:0,recv:0,sold:0,saleTax:0,target:0,short:0};
+    rows.push(row);
+    if(a===end) break;
+    usedYear=0;
+    for(let m=0;m<12;m++){
+      P*=gm; dps*=dm;
+      const gN=shN*dps/12, gT=shT*dps/12;
+      const fN=gN*f, fT=gT*f, dT=(gT-fT)*tax, net=gN-fN+gT-fT-dT;
+      row.divGross+=gN+gT; row.fTax+=fN+fT; row.dTax+=dT; row.divNet+=net;
+      let got=0;
+      if(a<s.reinvestUntil){ row.reinv+=net; buy(net,a); } else { row.recv+=net; got=net; }
+      if(a<s.contribEnd && s.monthly>0){ const c=s.monthly*1e4; row.contrib+=c; principal+=c; buy(c,a); }
+      if(a>=s.wdStart && target>0){
+        row.target+=target;
+        let need=target-got;
+        if(need>0){
+          const order=s.wdOrder==='N'?['N','T']:['T','N'];
+          for(const k of order){ const g=sell(k,need); need-=g; row.sold+=g; if(need<=0.5) break; }
+          if(need>1){ row.short+=need; if(out.depletedAge===null) out.depletedAge=a; }
+        }
+      }
+      target*=im;
+    }
+  }
+  return out;
+}
+
+/* ---------- 表示のための小道具 ---------- */
+const $=(q,el=document)=>el.querySelector(q), $$=(q,el=document)=>[...el.querySelectorAll(q)];
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function yen(v){
+  const a=Math.abs(v);
+  if(a>=1e8) return (v/1e8).toFixed(2)+'億円';
+  if(a>=1e6) return Math.round(v/1e4).toLocaleString('ja-JP')+'万円';
+  return (v/1e4).toFixed(1)+'万円';
+}
+function axisLabel(v){
+  if(v===0) return '0';
+  if(v>=1e8) return (+(v/1e8).toFixed(2))+'億';
+  return (+(v/1e4).toFixed(1)).toLocaleString('ja-JP')+'万';
+}
+function niceTicks(max){
+  if(!(max>0)) max=1e4;
+  const raw=max/4, p=Math.pow(10,Math.floor(Math.log10(raw))), m=raw/p;
+  const step=(m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p, n=Math.ceil(max/step-1e-9);
+  return {step,n,top:n*step};
+}
+
+/* ---------- 入力欄を作る ---------- */
+function buildFields(){
+  for(const box of $$('[data-fields]')){
+    box.innerHTML=box.dataset.fields.split(',').map(k=>{
+      const f=F[k], hint=f.hint?`<small>${f.hint}</small>`:'';
+      let ctl;
+      if(f.type==='bool') ctl=`<span class="switch"><input type="checkbox" id="f-${k}" data-k="${k}"><span></span></span>`;
+      else if(f.type==='select') ctl=`<select id="f-${k}" data-k="${k}">${f.options.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select>`;
+      else ctl=`<span class="num"><button type="button" data-step="-1" data-for="${k}" aria-label="減らす">−</button><input type="number" inputmode="decimal" step="any" id="f-${k}" data-k="${k}"><button type="button" data-step="1" data-for="${k}" aria-label="増やす">＋</button><span class="unit">${f.unit}</span></span>`;
+      return `<div class="field" data-row="${k}"><label for="f-${k}">${f.label}${hint}</label>${ctl}</div>`;
+    }).join('');
+  }
+  document.addEventListener('input',e=>{
+    const k=e.target.dataset&&e.target.dataset.k; if(!k) return;
+    const f=F[k];
+    if(f.type==='bool') S[k]=e.target.checked;
+    else if(f.type==='select') S[k]=e.target.value;
+    else { const v=parseFloat(e.target.value); if(!isFinite(v)) return; S[k]=clamp(v,f.min??-Infinity,f.max??Infinity); }
+    save(); render();
+  });
+  document.addEventListener('change',e=>{ const k=e.target.dataset&&e.target.dataset.k; if(k&&!F[k].type) e.target.value=S[k]; });
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-step]'); if(!b) return;
+    const k=b.dataset.for, f=F[k];
+    const v=Math.round((S[k]+(+b.dataset.step)*f.step)*1000)/1000;
+    S[k]=clamp(v,f.min??-Infinity,f.max??Infinity); $('#f-'+k).value=S[k]; save(); render();
+  });
+}
+function fillFields(){
+  for(const k in F){
+    const el=$('#f-'+k); if(!el) continue;
+    if(F[k].type==='bool') el.checked=S[k]; else if(document.activeElement!==el) el.value=S[k];
+  }
+}
+function showDeps(){
+  for(const k in F){ const d=F[k].dep; if(d){ const r=$(`[data-row="${k}"]`); if(r) r.hidden=!S[d]; r&&(r.style.display=S[d]?'':'none'); } }
+}
+
+/* ---------- グラフ ---------- */
+const NS='http://www.w3.org/2000/svg';
+function drawChart(svg,cfg){
+  const W=svg.clientWidth||340, H=220, L=46, R=10, T=20, B=24, pw=W-L-R, ph=H-T-B;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const n=cfg.xs.length, a0=cfg.xs[0], a1=cfg.xs[n-1];
+  const tot=cfg.xs.map((_,i)=>cfg.stacks.reduce((t,s)=>t+s.values[i],0));
+  let max=Math.max(...tot); if(cfg.line) max=Math.max(max,...cfg.line);
+  const tk=niceTicks(max), y=v=>T+ph-(v/tk.top)*ph;
+  const bar=cfg.type==='bar', bw=pw/n;
+  const x=bar?(a=>L+(a-a0+0.5)*bw):(a=>L+(a1===a0?0:(a-a0)/(a1-a0))*pw);
+  let h='';
+  for(let i=0;i<=tk.n;i++){ const v=i*tk.step, yy=y(v);
+    h+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="${i?'var(--grid)':'var(--axis)'}" stroke-width="1"/>`;
+    h+=`<text x="${L-6}" y="${yy+4}" text-anchor="end">${axisLabel(v)}</text>`; }
+  const span=a1-a0, st=span>60?20:span>25?10:span>10?5:span>5?2:1;
+  for(let a=Math.ceil(a0/st)*st;a<=a1;a+=st){ const xx=x(a); if(xx>W-R-8&&a!==a1) continue;
+    const edge=xx>W-R-16;
+    h+=`<text x="${edge?W-2:xx}" y="${H-7}" text-anchor="${edge?'end':'middle'}">${a}歳</text>`; }
+  if(bar){
+    const w=Math.max(1,bw-(bw>4?1.5:0.5));
+    cfg.xs.forEach((a,i)=>{ let base=0;
+      cfg.stacks.forEach(s=>{ const v=s.values[i]; if(v<=0) return;
+        const y1=y(base+v), y0=y(base); h+=`<rect x="${x(a)-w/2}" y="${y1}" width="${w}" height="${Math.max(0.5,y0-y1)}" fill="${s.color}"/>`; base+=v; }); });
+  }else{
+    const base=new Array(n).fill(0);
+    const paths=cfg.stacks.map(s=>{
+      const top=base.map((b,i)=>b+s.values[i]);
+      let d=top.map((v,i)=>(i?'L':'M')+x(cfg.xs[i]).toFixed(1)+' '+y(v).toFixed(1)).join('');
+      for(let i=n-1;i>=0;i--) d+='L'+x(cfg.xs[i]).toFixed(1)+' '+y(base[i]).toFixed(1);
+      for(let i=0;i<n;i++) base[i]=top[i];
+      return `<path d="${d}Z" fill="${s.color}" stroke="var(--surface)" stroke-width="1.5" stroke-linejoin="round"/>`;
+    });
+    h+=paths.join('');
+    if(cfg.line){ const d=cfg.line.map((v,i)=>(i?'L':'M')+x(cfg.xs[i]).toFixed(1)+' '+y(v).toFixed(1)).join('');
+      h+=`<path d="${d}" fill="none" stroke="var(--surface)" stroke-width="4"/><path d="${d}" fill="none" stroke="var(--ink2)" stroke-width="2" stroke-dasharray="5 4"/>`; }
+  }
+  if(cfg.mark && cfg.mark.age>=a0 && cfg.mark.age<=a1){
+    const xx=bar?L+(cfg.mark.age-a0)*bw:x(cfg.mark.age), right=xx>L+pw*0.6;
+    h+=`<line x1="${xx}" x2="${xx}" y1="${T-4}" y2="${T+ph}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 3"/>`;
+    h+=`<text x="${xx+(right?-4:4)}" y="${T-8}" text-anchor="${right?'end':'start'}" style="fill:var(--ink2)">${cfg.mark.label}</text>`;
+  }
+  h+=`<line class="cross" y1="${T}" y2="${T+ph}" stroke="var(--ink)" stroke-width="1.5"/>`;
+  svg.innerHTML=h;
+  svg._pos=a=>x(clamp(a,a0,a1));
+  svg._age=px=>clamp(Math.round(bar?a0+(px-L)/bw-0.5:a0+(px-L)/pw*(a1-a0)),a0,a1);
+}
+function bindChart(svg){
+  const h=e=>{ if(e.type==='pointermove'&&e.pointerType==='mouse'&&e.buttons===0&&false) return;
+    if(!svg._age) return; const r=svg.getBoundingClientRect(); sel=svg._age(e.clientX-r.left); updateSel(); };
+  svg.addEventListener('pointerdown',h); svg.addEventListener('pointermove',h);
+}
+
+/* ---------- 画面の組み立て ---------- */
+let R=null, sel=null;
+const tile=(k,v,s,cls)=>`<div class="tile ${cls||''}"><div class="k">${k}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
+const rowAt=a=>R.rows[clamp(Math.round(a),R.age,R.end)-R.age];
+const dl=list=>list.map(([k,v,sub])=>`<dt class="${sub?'sub':''}">${k}</dt><dd>${v}</dd>`).join('');
+const table=(head,body)=>`<table><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+
+function render(){
+  fillFields(); showDeps();
+  R=simulate(S);
+  if(sel===null) sel=R.age;
+  sel=clamp(sel,R.age,R.end);
+  $('#ageChip').textContent=`いま ${R.age}歳`;
+  const rows=R.rows, flows=rows.slice(0,-1), xs=rows.map(r=>r.age);
+
+  /* ① 積立 */
+  const ce=rowAt(S.contribEnd);
+  let nisaV,nisaS;
+  if(!S.nisaOn){ nisaV='使わない'; nisaS='すべて課税口座で計算'; }
+  else if(R.fullAge!==null){ nisaV=`${R.fullAge}歳`; nisaS=`あと${R.fullAge-R.age}年。以降は課税口座へ`; }
+  else { nisaV='埋まらない'; nisaS=`${R.end}歳まで枠が残ります`; }
+  $('#tiles-save').innerHTML=
+    tile(`積立を終える ${ce.age}歳の資産`,yen(ce.total),`元本 ${yen(ce.principal)} ／ 増えた分 ${yen(ce.total-ce.principal)}`,'wide')+
+    tile('NISAの枠が埋まる年齢',nisaV,nisaS)+
+    tile('課税口座に回り始める年齢',R.firstTaxAge===null?'なし':`${R.firstTaxAge}歳`,R.firstTaxAge===null?'':'年間か生涯の上限を超えた年');
+  drawChart($('#ch-save'),{xs,stacks:[{color:'var(--s1)',values:rows.map(r=>r.nisa)},{color:'var(--s2)',values:rows.map(r=>r.taxable)}],
+    line:rows.map(r=>r.principal),mark:{age:ce.age,label:`${ce.age}歳 積立終了`}});
+  $('#tb-save').innerHTML=table(['年齢','資産合計','NISA','課税口座','元本'],rows.map(r=>[r.age+'歳',yen(r.total),yen(r.nisa),yen(r.taxable),yen(r.principal)]));
+
+  /* ② 配当 */
+  const rv=rowAt(Math.max(S.reinvestUntil,R.age)), rvf=rv.age>=R.end?null:rv;
+  const reinvSum=flows.reduce((t,r)=>t+r.reinv,0), recvSum=flows.reduce((t,r)=>t+r.recv,0);
+  $('#tiles-div').innerHTML=
+    (rvf?tile(`受け取りを始める ${rvf.age}歳の配当（手取り）`,`月 ${yen(rvf.divNet/12)}`,`年 ${yen(rvf.divNet)}（税引前 ${yen(rvf.divGross)}）`,'wide')
+        :tile('配当の受け取り','なし',`${R.end}歳まですべて再投資`,'wide'))+
+    tile('再投資する配当の合計',yen(reinvSum),`${R.age}歳〜${Math.min(Math.max(S.reinvestUntil,R.age),R.end)}歳`)+
+    tile('受け取る配当の合計',yen(recvSum),`${R.end}歳まで・手取り`);
+  drawChart($('#ch-div'),{type:'bar',xs:flows.map(r=>r.age),stacks:[{color:'var(--s3)',values:flows.map(r=>r.reinv)},{color:'var(--s4)',values:flows.map(r=>r.recv)}],
+    mark:rvf&&rvf.age>R.age?{age:rvf.age,label:`${rvf.age}歳から受け取り`}:null});
+  $('#tb-div').innerHTML=table(['年齢','税引前','税金','手取り','再投資','受け取り'],flows.map(r=>[r.age+'歳',yen(r.divGross),yen(r.fTax+r.dTax),yen(r.divNet),yen(r.reinv),yen(r.recv)]));
+
+  /* ③ 取り崩し */
+  const ws=rowAt(Math.max(S.wdStart,R.age)), last=rows[rows.length-1];
+  const firstT=ws.age<R.end?ws.target/12:0;
+  $('#tiles-wd').innerHTML=
+    (R.depletedAge!==null
+      ?tile('資産がもつ年齢',`⚠ ${R.depletedAge}歳で尽きる`,`取り崩し開始から${R.depletedAge-ws.age}年。使いたい額に届かなくなります`,'wide warn')
+      :tile('資産がもつ年齢',`${R.end}歳までもつ`,`${R.end}歳の時点で ${yen(last.total)} 残ります`,'wide'))+
+    tile(`取り崩しを始める ${ws.age}歳の資産`,yen(ws.total),`NISA ${yen(ws.nisa)}`)+
+    tile(`${ws.age}歳で毎月使う額`,yen(firstT),S.inflOn?`いまの ${yen(S.wdMonthly*1e4)} 相当`:'物価上昇は考えない');
+  drawChart($('#ch-wd'),{xs,stacks:[{color:'var(--s1)',values:rows.map(r=>r.nisa)},{color:'var(--s2)',values:rows.map(r=>r.taxable)}],
+    mark:{age:ws.age,label:`${ws.age}歳 取り崩し開始`}});
+  $('#tb-wd').innerHTML=table(['年齢','年初の資産','配当から','売却から','売却の税'],rows.filter(r=>r.age>=ws.age).map(r=>[r.age+'歳',yen(r.total),yen(r.recv),yen(r.sold),yen(r.saleTax)]));
+
+  /* 羊のひとこと */
+  const say=(id,html,warn)=>{ const el=$('#say-'+id); el.classList.toggle('warn',!!warn); $('p',el).innerHTML=html; };
+  say('save',`${ce.age}歳まで積み立てると <b>${yen(ce.total)}</b> になりそうだよ。`+
+    (S.nisaOn&&R.fullAge!==null?`NISAの枠は<b>${R.fullAge}歳</b>でいっぱい！`:''));
+  say('div',rvf?`${rvf.age}歳からは、配当が <b>月${yen(rvf.divNet/12)}</b> もらえそうだよ。`:`配当はぜんぶ再投資に回しているよ。`);
+  say('wd',R.depletedAge!==null?`たいへん！ <b>${R.depletedAge}歳</b>でお金がなくなりそう…。使う額を見直してみよう。`
+    :`<b>${R.end}歳</b>まで安心！ そのとき <b>${yen(last.total)}</b> 残りそうだよ。`,R.depletedAge!==null);
+  const wdImg=$('#say-wd img'), wdSrc=R.depletedAge!==null?'pose-sad.png':'pose-happy.png';
+  if(wdImg.getAttribute('src')!==wdSrc) wdImg.setAttribute('src',wdSrc);
+
+  for(const r of $$('.selRange')){ r.min=R.age; r.max=R.end; r.step=1; }
+  updateSel();
+}
+
+function updateSel(){
+  const r=rowAt(sel), isLast=r.age>=R.end;
+  for(const el of $$('.selLabel')) el.textContent=`${r.age}歳`;
+  for(const el of $$('.selRange')) el.value=r.age;
+  for(const svg of $$('svg.chart')){ const c=$('.cross',svg); if(c&&svg._pos){ const x=svg._pos(r.age); c.setAttribute('x1',x); c.setAttribute('x2',x); } }
+  $('#dl-save').innerHTML=dl([
+    [`${r.age}歳になった時点の資産`,yen(r.total)],['NISA口座',yen(r.nisa),1],['課税口座',yen(r.taxable),1],
+    ['積み立てた元本',yen(r.principal)],
+    ...(S.nisaOn?[['使ったNISAの枠',`${yen(r.nisaUsed)} / ${yen(S.nisaLife*1e4)}`]]:[]),
+    ...(isLast?[]:[['この1年に買う額（積立＋再投資）',yen(r.toN+r.toT)],['NISAで買う',yen(r.toN),1],['課税口座で買う',yen(r.toT),1]])]);
+  const d=isLast?rowAt(R.end-1):r;
+  $('#dl-div').innerHTML=dl([
+    [`${d.age}歳の1年間の配当（税引前）`,yen(d.divGross)],['外国での税',yen(d.fTax),1],['国内の税',yen(d.dTax),1],
+    ['手取り（年）',yen(d.divNet)],['手取り（月あたり）',yen(d.divNet/12)],
+    ['再投資に回す',yen(d.reinv),1],['受け取って使う',yen(d.recv),1]]);
+  $('#dl-wd').innerHTML=dl([
+    [`${r.age}歳になった時点の資産`,yen(r.total)],['NISA口座',yen(r.nisa),1],['課税口座',yen(r.taxable),1],
+    ...(isLast?[]:[['この1年に使えるお金（手取り）',yen(r.recv+r.sold)],['配当から',yen(r.recv),1],['売って作る',yen(r.sold),1],
+      ['売るときの税金',yen(r.saleTax)],...(r.target>0?[['使いたい額',yen(r.target)]]:[]),...(r.short>1?[['⚠ 足りない額',yen(r.short)]]:[])])]);
+}
+
+/* ---------- タブ ---------- */
+function showTab(t){
+  for(const s of $$('main>section')) s.hidden=s.id!=='tab-'+t;
+  for(const b of $$('nav button')) b.setAttribute('aria-selected',b.dataset.tab===t);
+  try{ sessionStorage.setItem(KEY+'-tab',t); }catch(e){}
+  window.scrollTo(0,0); render();
+}
+
+/* ---------- 起動 ---------- */
+buildFields();
+for(const svg of $$('svg.chart')) bindChart(svg);
+for(const r of $$('.selRange')) r.addEventListener('input',e=>{ sel=+e.target.value; updateSel(); });
+for(const b of $$('nav button')) b.addEventListener('click',()=>showTab(b.dataset.tab));
+$('#ageChip').addEventListener('click',()=>showTab('set'));
+$('#resetBtn').addEventListener('click',()=>{ if(confirm('入力した条件をすべて最初の状態に戻します。よろしいですか？')){ S=defaults(); sel=null; save(); for(const k in F){const el=$('#f-'+k); if(el&&!F[k].type) el.value=S[k]; else if(el&&F[k].type==='select') el.value=S[k];} render(); } });
+window.addEventListener('resize',()=>render());
+let t0='save'; try{ t0=sessionStorage.getItem(KEY+'-tab')||'save'; }catch(e){}
+for(const k in F){ const el=$('#f-'+k); if(el&&F[k].type==='select') el.value=S[k]; }
+showTab(t0);
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
